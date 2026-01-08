@@ -23,6 +23,14 @@
         .check-box-container input { width: auto; margin-right: 10px; transform: scale(1.5); }
         .check-box-container span { color: #856404; font-weight: bold; }
 
+        /* BARRA DE PESQUISA (NOVO) */
+        .search-container { margin-bottom: 20px; position: relative; }
+        .search-input { 
+            width: 100%; padding: 15px; border: 2px solid #007bff; border-radius: 30px; 
+            font-size: 16px; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .search-input:focus { box-shadow: 0 0 8px rgba(0,123,255,0.5); }
+
         /* Estilos Visuais */
         .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
         .btn-excluir { position: absolute; top: 10px; right: 10px; background: #ff4757; color: white; border: none; padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; width: auto; margin-top: 0;}
@@ -133,7 +141,12 @@
 </div>
 
 <div class="container" style="margin-top: 20px;">
-    <h2>Histórico</h2>
+    <h2>Histórico / Consultar OS</h2>
+    
+    <div class="search-container">
+        <input type="text" id="campo_busca" class="search-input" placeholder="🔍 Buscar por Nome, ID, Status ou Equipamento..." onkeyup="filtrarLista()">
+    </div>
+
     <div id="lista-os">Carregando...</div>
 </div>
 
@@ -151,145 +164,36 @@
     const serialBox = document.getElementById('box-serial');
     const serialInput = document.getElementById('serial_caneca');
 
-    // NOVA Lógica de Validação da Caneca (Baseada no Checkbox)
+    // Validação da Caneca
     function verificarCaneca() {
         let status = statusSelect.value;
         let houveTroca = checkCaneca.checked;
         
         if (houveTroca) {
-            // Se marcou que trocou, mostra o campo
             serialBox.style.display = 'block';
-            
-            // Só obriga se estiver PRONTO
             if (status === 'Pronto') {
                 serialInput.required = true;
                 serialInput.placeholder = "Obrigatorio: Digite o serial para salvar";
-                serialBox.style.border = "2px solid red"; // Destaque visual
+                serialBox.style.border = "2px solid red";
             } else {
                 serialInput.required = false;
                 serialInput.placeholder = "Pode preencher agora ou depois...";
                 serialBox.style.border = "1px solid #ffeeba";
             }
         } else {
-            // Se desmarcou, esconde e limpa
             serialBox.style.display = 'none';
             serialInput.required = false;
             serialInput.value = ""; 
         }
     }
 
-    // Monitorar Checkbox e Status
     checkCaneca.addEventListener('change', verificarCaneca);
     statusSelect.addEventListener('change', verificarCaneca);
 
-    // Salvar OS
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        
-        // Verificação final de segurança
-        if(checkCaneca.checked && statusSelect.value === 'Pronto' && serialInput.value.trim() === "") {
-            alert("ERRO: Você marcou Troca de Caneca e o status é Pronto.\nO Número de Série é OBRIGATÓRIO!");
-            serialInput.focus();
-            return;
-        }
+    // FUNÇÃO DE BUSCA (FILTRO)
+    function filtrarLista() {
+        let termo = document.getElementById('campo_busca').value.toLowerCase();
+        let cards = document.getElementsByClassName('card');
 
-        const btn = document.getElementById('btn-salvar');
-        btn.innerText = "Gerando ID...";
-        btn.disabled = true;
-
-        fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-            .then(response => response.json())
-            .then(data => {
-                if(data.result === 'success') {
-                    alert("✅ OS #" + data.id_gerado + " criada com sucesso!");
-                    form.reset();
-                    document.getElementById('data_entrada').valueAsDate = new Date();
-                    
-                    // Reseta visual da caneca
-                    checkCaneca.checked = false; 
-                    verificarCaneca();
-                    
-                    carregarOS();
-                } else {
-                    alert("Erro no script: " + data.error);
-                }
-                btn.innerText = "💾 Gerar OS";
-                btn.disabled = false;
-            })
-            .catch(error => { console.error('Erro!', error.message); btn.disabled = false; })
-    });
-
-    // Excluir OS
-    function excluirOS(id) {
-        let senha = prompt("🔒 Área Restrita\nDigite a SENHA MESTRA para excluir a OS #" + id + ":");
-        if (senha) {
-            let formData = new FormData();
-            formData.append('acao', 'excluir');
-            formData.append('id_excluir', id);
-            formData.append('senha', senha);
-
-            fetch(scriptURL, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.result === 'success') {
-                    alert("🗑️ " + data.message);
-                    carregarOS();
-                } else {
-                    alert("⛔ " + data.message);
-                }
-            })
-            .catch(e => alert("Erro de conexão"));
-        }
-    }
-
-    function carregarOS() {
-        const lista = document.getElementById('lista-os');
-        lista.innerHTML = "<p style='text-align:center'>Atualizando...</p>";
-        fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-            lista.innerHTML = "";
-            data.forEach(linha => {
-                // Mapeamento: 0:ID, 1:Entrada, 3:Cliente, 4:Tel, 5:Equip, 6:Volts, 7:Acessorios, 8:Defeito, 9:Diag, 10:Pecas, 11:Status, 12:Serial
-                
-                let dataEnt = linha[1] ? new Date(linha[1]).toLocaleDateString('pt-BR') : '-';
-                
-                let classeStatus = 'status-pendente';
-                let classeTag = 'tag-pendente';
-                if(linha[11] && linha[11].includes('Pronto')) { classeStatus = 'status-pronto'; classeTag = 'tag-pronto'; }
-                if(linha[11] && linha[11].includes('Entregue')) { classeStatus = 'status-entregue'; classeTag = 'tag-entregue'; }
-
-                let html = `
-                <div class="card ${classeStatus}">
-                    <button class="btn-excluir" onclick="excluirOS('${linha[0]}')">Excluir 🗑️</button>
-                    <div style="margin-bottom:10px;">
-                        <strong>#${linha[0]} - ${linha[3]}</strong>
-                        <span class="status-badge ${classeTag}">${linha[11]}</span>
-                    </div>
-                    
-                    <div class="card-details">
-                        <div>📅 Entrada: ${dataEnt}</div>
-                        <div>⚡ ${linha[6]}</div>
-                        <div style="grid-column: span 2">⚙️ ${linha[5]}</div>
-                        <div style="grid-column: span 2; font-style: italic; color:#666;">📦 ${linha[7] || "Nenhum"}</div>
-                        ${linha[10] ? `<div style="grid-column: span 2; color:#0984e3"><strong>✅ Feito:</strong> ${linha[10]}</div>` : ''}
-                        ${linha[12] ? `<div style="grid-column: span 2; background:#ffeaa7; padding:5px; border-radius:4px; border:1px dashed #d35400; color:#d35400;"><strong>🔑 Serial Caneca:</strong> ${linha[12]}</div>` : ''}
-                    </div>
-
-                    <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                        <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, referente à OS ${linha[0]}..." 
-                           target="_blank" style="text-decoration:none; color:#28a745; font-weight:bold;">
-                           📲 WhatsApp
-                        </a>
-                    </div>
-                </div>
-                `;
-                lista.innerHTML += html;
-            });
-        });
-    }
-    carregarOS();
-</script>
-
-</body>
-</html>
+        for (let i = 0; i < cards.length; i++) {
+            let textoCard = cards[i].innerText.
