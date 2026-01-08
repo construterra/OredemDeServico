@@ -3,36 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oficina de Bombas - Controle de OS</title>
+    <title>Oficina de Bombas - Sistema Inteligente</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #e9ecef; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        
-        /* Grid para formulário */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
-        
         label { font-weight: bold; font-size: 0.9em; color: #555; display: block; margin-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        textarea { resize: vertical; height: 80px; }
-        
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; transition: background 0.3s; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; }
         button:hover { background: #0056b3; }
+        
+        /* Checkbox customizado */
+        .check-box-container {
+            background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px;
+            display: flex; align-items: center; cursor: pointer;
+        }
+        .check-box-container input { width: auto; margin-right: 10px; transform: scale(1.5); }
+        .check-box-container span { color: #856404; font-weight: bold; }
 
-        /* Estilo dos Cards de Histórico */
-        .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;}
-        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; }
+        /* Estilos Visuais */
+        .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
+        .btn-excluir { position: absolute; top: 10px; right: 10px; background: #ff4757; color: white; border: none; padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; width: auto; margin-top: 0;}
+        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; margin-top: 10px;}
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
         
-        /* Cores dos status */
+        /* Cores */
         .status-pendente { border-left-color: #ffc107; } .tag-pendente { background: #fff3cd; color: #856404; }
         .status-manutencao { border-left-color: #17a2b8; } .tag-manutencao { background: #d1ecf1; color: #0c5460; }
         .status-pronto { border-left-color: #28a745; } .tag-pronto { background: #d4edda; color: #155724; }
         .status-entregue { border-left-color: #6c757d; opacity: 0.8; } .tag-entregue { background: #e2e3e5; color: #383d41; }
-        
-        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
     </style>
 </head>
 <body>
@@ -40,10 +41,12 @@
 <div class="container">
     <h2>Nova Ordem de Serviço</h2>
     <form id="form-os">
+        <input type="hidden" name="acao" value="salvar">
         <div class="form-grid">
+            
             <div>
-                <label>Nº da OS (ID)</label>
-                <input type="text" name="ID" id="id_os" placeholder="Ex: 1050" required>
+                <label>Nº da OS</label>
+                <input type="text" value="Automático (1001...)" disabled style="background:#f0f0f0; color:#888;">
             </div>
             <div>
                 <label>Data de Entrada</label>
@@ -61,7 +64,7 @@
             </div>
             <div>
                 <label>Status Atual</label>
-                <select name="Status">
+                <select name="Status" id="status_campo">
                     <option value="Aguardando Avaliação">Aguardando Avaliação</option>
                     <option value="Em Manutenção">Em Manutenção</option>
                     <option value="Aguardando Peça">Aguardando Peça</option>
@@ -77,9 +80,11 @@
             <div>
                 <label>Voltagem</label>
                 <select name="Voltagem">
-                    <option value="110v">110v / 127v</option>
+                    <option value="110v">110v</option>
+                    <option value="127v">127v</option>
                     <option value="220v Mono">220v Monofásica</option>
                     <option value="220v Trif">220v Trifásica</option>
+                    <option value="254v">254v</option>
                     <option value="380v">380v Trifásica</option>
                     <option value="Outro">Outro</option>
                 </select>
@@ -87,112 +92,194 @@
 
             <div class="full-width">
                 <label>Acessórios (O que veio junto?)</label>
-                <input type="text" name="Acessorios" placeholder="Ex: Válvula de pé, curva, niple, sem tampa...">
+                <input type="text" name="Acessorios" placeholder="Ex: Válvula de pé, curva...">
             </div>
 
             <div class="full-width">
-                <label>Defeito Relatado (Cliente)</label>
-                <input type="text" name="Defeito" placeholder="O que o cliente disse que está acontecendo?">
+                <label>Defeito Relatado</label>
+                <input type="text" name="Defeito" placeholder="O que o cliente disse?">
             </div>
 
             <div class="full-width">
-                <label>Diagnóstico (Peças com Defeito)</label>
-                <textarea name="Diagnostico" placeholder="Liste aqui as peças quebradas encontradas na avaliação..."></textarea>
+                <label>Diagnóstico</label>
+                <textarea name="Diagnostico" placeholder="Problemas encontrados..."></textarea>
+            </div>
+            
+            <div class="full-width">
+                <label class="check-box-container">
+                    <input type="checkbox" id="check_troca_caneca">
+                    <span>⚠️ Houve troca de Caneca? (Marque para registrar Serial)</span>
+                </label>
+            </div>
+
+            <div class="full-width" id="box-serial" style="display:none; background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; margin-top:-10px;">
+                <label style="color:#d35400;">🔢 Número de Série da Caneca</label>
+                <input type="text" name="Serial_Caneca" id="serial_caneca" placeholder="Digite o serial obrigatório...">
             </div>
             
             <div class="full-width">
                 <label>Peças Trocadas / Serviço Feito</label>
-                <textarea name="Pecas_Trocadas" placeholder="O que foi efetivamente trocado ou reparado..."></textarea>
+                <textarea name="Pecas_Trocadas" placeholder="Liste as peças trocadas aqui..."></textarea>
             </div>
 
             <div>
-                <label>Data de Saída (Opcional)</label>
+                <label>Data de Saída</label>
                 <input type="date" name="Data_Saida">
             </div>
         </div>
 
-        <button type="submit" id="btn-salvar">💾 Salvar Ordem de Serviço</button>
+        <button type="submit" id="btn-salvar">💾 Gerar OS</button>
     </form>
 </div>
 
 <div class="container" style="margin-top: 20px;">
-    <h2>Últimas Manutenções</h2>
-    <div id="lista-os">Carregando histórico...</div>
+    <h2>Histórico</h2>
+    <div id="lista-os">Carregando...</div>
 </div>
 
 <script>
-    // --- COLOQUE SEU LINK AQUI DENTRO DAS ASPAS ---
-    const scriptURL = https://script.google.com/macros/s/AKfycbxyoZcOqdg6j6U5NKdKPwUZ7yAvUcLrEuUzoWGU-rwHSKQo4EZdtwy70Vor7CCYjVAgzg/exec; 
-    // ----------------------------------------------
+    // --- COLOQUE SEU LINK AQUI ---
+    const scriptURL = 'SEU_LINK_DO_GOOGLE_SCRIPT_AQUI'; 
+    // ----------------------------
 
-    // Preenche a data de hoje automaticamente
     document.getElementById('data_entrada').valueAsDate = new Date();
-
     const form = document.forms['form-os'];
-    const lista = document.getElementById('lista-os');
+    const statusSelect = document.getElementById('status_campo');
+    
+    // Elementos da Caneca
+    const checkCaneca = document.getElementById('check_troca_caneca');
+    const serialBox = document.getElementById('box-serial');
+    const serialInput = document.getElementById('serial_caneca');
 
+    // NOVA Lógica de Validação da Caneca (Baseada no Checkbox)
+    function verificarCaneca() {
+        let status = statusSelect.value;
+        let houveTroca = checkCaneca.checked;
+        
+        if (houveTroca) {
+            // Se marcou que trocou, mostra o campo
+            serialBox.style.display = 'block';
+            
+            // Só obriga se estiver PRONTO
+            if (status === 'Pronto') {
+                serialInput.required = true;
+                serialInput.placeholder = "Obrigatorio: Digite o serial para salvar";
+                serialBox.style.border = "2px solid red"; // Destaque visual
+            } else {
+                serialInput.required = false;
+                serialInput.placeholder = "Pode preencher agora ou depois...";
+                serialBox.style.border = "1px solid #ffeeba";
+            }
+        } else {
+            // Se desmarcou, esconde e limpa
+            serialBox.style.display = 'none';
+            serialInput.required = false;
+            serialInput.value = ""; 
+        }
+    }
+
+    // Monitorar Checkbox e Status
+    checkCaneca.addEventListener('change', verificarCaneca);
+    statusSelect.addEventListener('change', verificarCaneca);
+
+    // Salvar OS
     form.addEventListener('submit', e => {
         e.preventDefault();
+        
+        // Verificação final de segurança
+        if(checkCaneca.checked && statusSelect.value === 'Pronto' && serialInput.value.trim() === "") {
+            alert("ERRO: Você marcou Troca de Caneca e o status é Pronto.\nO Número de Série é OBRIGATÓRIO!");
+            serialInput.focus();
+            return;
+        }
+
         const btn = document.getElementById('btn-salvar');
-        btn.innerText = "Enviando dados...";
+        btn.innerText = "Gerando ID...";
         btn.disabled = true;
 
         fetch(scriptURL, { method: 'POST', body: new FormData(form)})
-            .then(response => {
-                alert("✅ OS Salva com Sucesso!");
-                form.reset();
-                document.getElementById('data_entrada').valueAsDate = new Date(); 
-                btn.innerText = "💾 Salvar Ordem de Serviço";
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === 'success') {
+                    alert("✅ OS #" + data.id_gerado + " criada com sucesso!");
+                    form.reset();
+                    document.getElementById('data_entrada').valueAsDate = new Date();
+                    
+                    // Reseta visual da caneca
+                    checkCaneca.checked = false; 
+                    verificarCaneca();
+                    
+                    carregarOS();
+                } else {
+                    alert("Erro no script: " + data.error);
+                }
+                btn.innerText = "💾 Gerar OS";
                 btn.disabled = false;
-                carregarOS();
             })
-            .catch(error => {
-                console.error('Erro!', error.message);
-                alert("Erro ao salvar. Verifique a internet.");
-                btn.disabled = false;
-            })
+            .catch(error => { console.error('Erro!', error.message); btn.disabled = false; })
     });
 
+    // Excluir OS
+    function excluirOS(id) {
+        let senha = prompt("🔒 Área Restrita\nDigite a SENHA MESTRA para excluir a OS #" + id + ":");
+        if (senha) {
+            let formData = new FormData();
+            formData.append('acao', 'excluir');
+            formData.append('id_excluir', id);
+            formData.append('senha', senha);
+
+            fetch(scriptURL, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    alert("🗑️ " + data.message);
+                    carregarOS();
+                } else {
+                    alert("⛔ " + data.message);
+                }
+            })
+            .catch(e => alert("Erro de conexão"));
+        }
+    }
+
     function carregarOS() {
-        lista.innerHTML = "<p style='text-align:center'>Atualizando lista...</p>";
+        const lista = document.getElementById('lista-os');
+        lista.innerHTML = "<p style='text-align:center'>Atualizando...</p>";
         fetch(scriptURL)
         .then(res => res.json())
         .then(data => {
             lista.innerHTML = "";
             data.forEach(linha => {
-                // Índices das colunas (IMPORTANTE: Se mudar a planilha, muda aqui):
-                // 0:ID, 1:Entrada, 2:Saida, 3:Cliente, 4:Tel, 5:Equip, 6:Volts, 7:Acessorios, 8:Defeito, 9:Diag, 10:Pecas, 11:Status
+                // Mapeamento: 0:ID, 1:Entrada, 3:Cliente, 4:Tel, 5:Equip, 6:Volts, 7:Acessorios, 8:Defeito, 9:Diag, 10:Pecas, 11:Status, 12:Serial
                 
                 let dataEnt = linha[1] ? new Date(linha[1]).toLocaleDateString('pt-BR') : '-';
                 
-                // Define cor do status
                 let classeStatus = 'status-pendente';
                 let classeTag = 'tag-pendente';
                 if(linha[11] && linha[11].includes('Pronto')) { classeStatus = 'status-pronto'; classeTag = 'tag-pronto'; }
-                if(linha[11] && linha[11].includes('Manutenção')) { classeStatus = 'status-manutencao'; classeTag = 'tag-manutencao'; }
                 if(linha[11] && linha[11].includes('Entregue')) { classeStatus = 'status-entregue'; classeTag = 'tag-entregue'; }
 
                 let html = `
                 <div class="card ${classeStatus}">
-                    <div class="card-header">
+                    <button class="btn-excluir" onclick="excluirOS('${linha[0]}')">Excluir 🗑️</button>
+                    <div style="margin-bottom:10px;">
                         <strong>#${linha[0]} - ${linha[3]}</strong>
                         <span class="status-badge ${classeTag}">${linha[11]}</span>
                     </div>
                     
                     <div class="card-details">
                         <div>📅 Entrada: ${dataEnt}</div>
-                        <div>⚡ Tensão: ${linha[6]}</div>
-                        <div style="grid-column: span 2">⚙️ Equip: ${linha[5]}</div>
-                        <div style="grid-column: span 2; font-style: italic; color:#666;">📦 Acessórios: ${linha[7] || "Nenhum"}</div>
-                        <div style="grid-column: span 2">🔧 Defeito: ${linha[8]}</div>
-                        ${linha[9] ? `<div style="grid-column: span 2; color:#d63031"><strong>⚠️ Diagnóstico:</strong> ${linha[9]}</div>` : ''}
+                        <div>⚡ ${linha[6]}</div>
+                        <div style="grid-column: span 2">⚙️ ${linha[5]}</div>
+                        <div style="grid-column: span 2; font-style: italic; color:#666;">📦 ${linha[7] || "Nenhum"}</div>
                         ${linha[10] ? `<div style="grid-column: span 2; color:#0984e3"><strong>✅ Feito:</strong> ${linha[10]}</div>` : ''}
+                        ${linha[12] ? `<div style="grid-column: span 2; background:#ffeaa7; padding:5px; border-radius:4px; border:1px dashed #d35400; color:#d35400;"><strong>🔑 Serial Caneca:</strong> ${linha[12]}</div>` : ''}
                     </div>
 
                     <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                        <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, referente à bomba ${linha[5]} (OS ${linha[0]})..." 
+                        <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, referente à OS ${linha[0]}..." 
                            target="_blank" style="text-decoration:none; color:#28a745; font-weight:bold;">
-                           📲 Mandar WhatsApp
+                           📲 WhatsApp
                         </a>
                     </div>
                 </div>
@@ -201,7 +288,6 @@
             });
         });
     }
-
     carregarOS();
 </script>
 
