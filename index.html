@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oficina de Bombas - Sistema Inteligente</title>
+    <title>Sistema OS 3.0</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #e9ecef; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -12,63 +12,62 @@
         .full-width { grid-column: span 2; }
         label { font-weight: bold; font-size: 0.9em; color: #555; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; }
-        button:hover { background: #0056b3; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; }
         
-        /* Checkbox customizado */
-        .check-box-container {
-            background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px;
-            display: flex; align-items: center; cursor: pointer;
-        }
-        .check-box-container input { width: auto; margin-right: 10px; transform: scale(1.5); }
-        .check-box-container span { color: #856404; font-weight: bold; }
+        #btn-salvar { background: #007bff; color: white; }
+        #btn-salvar:hover { background: #0056b3; }
+        
+        #btn-cancelar-edicao { background: #6c757d; color: white; display: none; margin-top: 10px; }
 
-        /* BARRA DE PESQUISA (NOVO) */
-        .search-container { margin-bottom: 20px; position: relative; }
-        .search-input { 
-            width: 100%; padding: 15px; border: 2px solid #007bff; border-radius: 30px; 
-            font-size: 16px; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .search-input:focus { box-shadow: 0 0 8px rgba(0,123,255,0.5); }
+        /* Barra de pesquisa */
+        .search-container { margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 15px; border: 2px solid #007bff; border-radius: 30px; font-size: 16px; outline: none; }
 
-        /* Estilos Visuais */
+        /* Cards */
         .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
-        .btn-excluir { position: absolute; top: 10px; right: 10px; background: #ff4757; color: white; border: none; padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; width: auto; margin-top: 0;}
-        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; margin-top: 10px;}
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+        .btn-acoes { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
+        .btn-mini { padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; color: white; border: none; }
+        .btn-editar { background: #f39c12; }
+        .btn-excluir { background: #ff4757; }
         
-        /* Cores */
+        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; margin-top: 25px;} /* Margin top maior para não bater nos botões */
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
+
+        /* Cores Status */
         .status-pendente { border-left-color: #ffc107; } .tag-pendente { background: #fff3cd; color: #856404; }
         .status-manutencao { border-left-color: #17a2b8; } .tag-manutencao { background: #d1ecf1; color: #0c5460; }
         .status-pronto { border-left-color: #28a745; } .tag-pronto { background: #d4edda; color: #155724; }
         .status-entregue { border-left-color: #6c757d; opacity: 0.8; } .tag-entregue { background: #e2e3e5; color: #383d41; }
+
+        /* Checkbox */
+        .check-box-container { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; display: flex; align-items: center; cursor: pointer; }
+        .check-box-container input { width: auto; margin-right: 10px; transform: scale(1.5); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Nova Ordem de Serviço</h2>
+    <h2 id="titulo-form">Nova Ordem de Serviço</h2>
     <form id="form-os">
-        <input type="hidden" name="acao" value="salvar">
+        <input type="hidden" name="acao" id="acao" value="salvar">
+        <input type="hidden" name="id_editar" id="id_editar">
+
         <div class="form-grid">
-            
             <div>
                 <label>Nº da OS</label>
-                <input type="text" value="Automático (1001...)" disabled style="background:#f0f0f0; color:#888;">
+                <input type="text" id="display_id" value="Automático" disabled style="background:#f0f0f0; color:#888;">
             </div>
             <div>
                 <label>Data de Entrada</label>
                 <input type="date" name="Data_Entrada" id="data_entrada" required>
             </div>
-
             <div class="full-width">
                 <label>Nome do Cliente</label>
-                <input type="text" name="Cliente" placeholder="Nome completo" required>
+                <input type="text" name="Cliente" id="cliente" placeholder="Nome completo" required>
             </div>
-            
             <div>
                 <label>WhatsApp (DDD+Número)</label>
-                <input type="tel" name="Telefone" placeholder="Ex: 11999998888" required>
+                <input type="tel" name="Telefone" id="telefone" placeholder="Ex: 11999998888" required>
             </div>
             <div>
                 <label>Status Atual</label>
@@ -80,14 +79,13 @@
                     <option value="Entregue">Entregue</option>
                 </select>
             </div>
-
             <div>
                 <label>Equipamento</label>
-                <input type="text" name="Equipamento" placeholder="Ex: Bomba Centrífuga" required>
+                <input type="text" name="Equipamento" id="equipamento" placeholder="Ex: Bomba Centrífuga" required>
             </div>
             <div>
                 <label>Voltagem</label>
-                <select name="Voltagem">
+                <select name="Voltagem" id="voltagem">
                     <option value="110v">110v</option>
                     <option value="127v">127v</option>
                     <option value="220v Mono">220v Monofásica</option>
@@ -97,103 +95,241 @@
                     <option value="Outro">Outro</option>
                 </select>
             </div>
-
             <div class="full-width">
-                <label>Acessórios (O que veio junto?)</label>
-                <input type="text" name="Acessorios" placeholder="Ex: Válvula de pé, curva...">
+                <label>Acessórios</label>
+                <input type="text" name="Acessorios" id="acessorios" placeholder="Ex: Válvula de pé...">
             </div>
-
             <div class="full-width">
                 <label>Defeito Relatado</label>
-                <input type="text" name="Defeito" placeholder="O que o cliente disse?">
+                <input type="text" name="Defeito" id="defeito" placeholder="O que o cliente disse?">
             </div>
-
             <div class="full-width">
                 <label>Diagnóstico</label>
-                <textarea name="Diagnostico" placeholder="Problemas encontrados..."></textarea>
+                <textarea name="Diagnostico" id="diagnostico" placeholder="Técnico: Problemas encontrados..."></textarea>
             </div>
             
             <div class="full-width">
                 <label class="check-box-container">
                     <input type="checkbox" id="check_troca_caneca">
-                    <span>⚠️ Houve troca de Caneca? (Marque para registrar Serial)</span>
+                    <span>⚠️ Houve troca de Caneca?</span>
                 </label>
             </div>
-
             <div class="full-width" id="box-serial" style="display:none; background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; margin-top:-10px;">
-                <label style="color:#d35400;">🔢 Número de Série da Caneca</label>
-                <input type="text" name="Serial_Caneca" id="serial_caneca" placeholder="Digite o serial obrigatório...">
+                <label style="color:#d35400;">🔢 Serial Caneca (Obrigatório)</label>
+                <input type="text" name="Serial_Caneca" id="serial_caneca">
             </div>
             
             <div class="full-width">
-                <label>Peças Trocadas / Serviço Feito</label>
-                <textarea name="Pecas_Trocadas" placeholder="Liste as peças trocadas aqui..."></textarea>
+                <label>Peças Trocadas</label>
+                <textarea name="Pecas_Trocadas" id="pecas_trocadas" placeholder="Liste as peças trocadas..."></textarea>
             </div>
-
             <div>
                 <label>Data de Saída</label>
-                <input type="date" name="Data_Saida">
+                <input type="date" name="Data_Saida" id="data_saida">
             </div>
         </div>
 
-        <button type="submit" id="btn-salvar">💾 Gerar OS</button>
+        <button type="submit" id="btn-salvar">💾 Salvar OS</button>
+        <button type="button" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar Edição</button>
     </form>
 </div>
 
 <div class="container" style="margin-top: 20px;">
-    <h2>Histórico / Consultar OS</h2>
-    
+    <h2>Histórico / Consultar</h2>
     <div class="search-container">
-        <input type="text" id="campo_busca" class="search-input" placeholder="🔍 Buscar por Nome, ID, Status ou Equipamento..." onkeyup="filtrarLista()">
+        <input type="text" id="campo_busca" class="search-input" placeholder="🔍 Buscar por Nome, ID..." onkeyup="filtrarLista()">
     </div>
-
     <div id="lista-os">Carregando...</div>
 </div>
 
 <script>
-    // --- COLOQUE SEU LINK AQUI ---
+    // 🔴 🔴 COLE SEU LINK AQUI EMBAIXO 🔴 🔴
     const scriptURL = 'https://script.google.com/macros/s/AKfycbxyoZcOqdg6j6U5NKdKPwUZ7yAvUcLrEuUzoWGU-rwHSKQo4EZdtwy70Vor7CCYjVAgzg/exec'; 
-    // ----------------------------
+    // ----------------------------------------
 
     document.getElementById('data_entrada').valueAsDate = new Date();
     const form = document.forms['form-os'];
     const statusSelect = document.getElementById('status_campo');
-    
-    // Elementos da Caneca
     const checkCaneca = document.getElementById('check_troca_caneca');
     const serialBox = document.getElementById('box-serial');
     const serialInput = document.getElementById('serial_caneca');
 
-    // Validação da Caneca
+    // Validação Caneca
     function verificarCaneca() {
-        let status = statusSelect.value;
-        let houveTroca = checkCaneca.checked;
-        
-        if (houveTroca) {
+        if (checkCaneca.checked) {
             serialBox.style.display = 'block';
-            if (status === 'Pronto') {
+            if (statusSelect.value === 'Pronto') {
                 serialInput.required = true;
-                serialInput.placeholder = "Obrigatorio: Digite o serial para salvar";
                 serialBox.style.border = "2px solid red";
             } else {
                 serialInput.required = false;
-                serialInput.placeholder = "Pode preencher agora ou depois...";
                 serialBox.style.border = "1px solid #ffeeba";
             }
         } else {
             serialBox.style.display = 'none';
             serialInput.required = false;
-            serialInput.value = ""; 
+            serialInput.value = "";
         }
     }
-
     checkCaneca.addEventListener('change', verificarCaneca);
     statusSelect.addEventListener('change', verificarCaneca);
 
-    // FUNÇÃO DE BUSCA (FILTRO)
-    function filtrarLista() {
+    // FUNÇÃO EDITAR (Preenche o formulário)
+    window.prepararEdicao = function(id, dataEnt, cliente, tel, equip, volt, acess, def, diag, pecas, status, serial, dataSai) {
+        document.getElementById('titulo-form').innerText = "Editando OS #" + id;
+        document.getElementById('btn-salvar').innerText = "🔄 Atualizar OS";
+        document.getElementById('btn-salvar').style.background = "#f39c12";
+        document.getElementById('btn-cancelar-edicao').style.display = "block";
+        
+        // Preenche campos ocultos e visíveis
+        document.getElementById('acao').value = "editar";
+        document.getElementById('id_editar').value = id;
+        document.getElementById('display_id').value = id;
+        
+        // Tratamento de datas (o formato yyyy-mm-dd é chato)
+        if(dataEnt && dataEnt !== 'undefined') { 
+            try { document.getElementById('data_entrada').value = new Date(dataEnt).toISOString().split('T')[0]; } catch(e){} 
+        }
+        if(dataSai && dataSai !== 'undefined' && dataSai !== '') { 
+            try { document.getElementById('data_saida').value = new Date(dataSai).toISOString().split('T')[0]; } catch(e){} 
+        }
+
+        document.getElementById('cliente').value = cliente;
+        document.getElementById('telefone').value = tel;
+        document.getElementById('equipamento').value = equip;
+        document.getElementById('voltagem').value = volt;
+        document.getElementById('acessorios').value = (acess === 'undefined') ? '' : acess;
+        document.getElementById('defeito').value = (def === 'undefined') ? '' : def;
+        document.getElementById('diagnostico').value = (diag === 'undefined') ? '' : diag;
+        document.getElementById('pecas_trocadas').value = (pecas === 'undefined') ? '' : pecas;
+        document.getElementById('status_campo').value = status;
+        
+        if (serial && serial !== 'undefined' && serial !== "") {
+            checkCaneca.checked = true;
+            serialInput.value = serial;
+        } else {
+            checkCaneca.checked = false;
+        }
+        verificarCaneca();
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.cancelarEdicao = function() {
+        form.reset();
+        document.getElementById('titulo-form').innerText = "Nova Ordem de Serviço";
+        document.getElementById('btn-salvar').innerText = "💾 Salvar OS";
+        document.getElementById('btn-salvar').style.background = "#007bff";
+        document.getElementById('btn-cancelar-edicao').style.display = "none";
+        document.getElementById('acao').value = "salvar";
+        document.getElementById('id_editar').value = "";
+        document.getElementById('display_id').value = "Automático";
+        document.getElementById('data_entrada').valueAsDate = new Date();
+        verificarCaneca();
+    }
+
+    // Salvar ou Editar
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        
+        if(checkCaneca.checked && statusSelect.value === 'Pronto' && serialInput.value.trim() === "") {
+            alert("ERRO: Serial da caneca é obrigatório!"); return;
+        }
+
+        const btn = document.getElementById('btn-salvar');
+        const textoOriginal = btn.innerText;
+        btn.innerText = "Processando...";
+        btn.disabled = true;
+
+        fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+            .then(response => response.json())
+            .then(data => {
+                if(data.result === 'success') {
+                    alert("✅ Sucesso: " + (data.message || "OS Salva!"));
+                    cancelarEdicao(); // Limpa e volta ao estado normal
+                    carregarOS();
+                } else {
+                    alert("Erro: " + data.message);
+                }
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+            })
+            .catch(error => { 
+                console.error('Erro!', error); 
+                alert("Erro de conexão. Verifique se copiou o Link do Script certo!"); 
+                btn.disabled = false; 
+            })
+    });
+
+    // Excluir
+    window.excluirOS = function(id) {
+        let senha = prompt("Senha para excluir OS #" + id + ":");
+        if (senha) {
+            let formData = new FormData();
+            formData.append('acao', 'excluir');
+            formData.append('id_excluir', id);
+            formData.append('senha', senha);
+            fetch(scriptURL, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => { alert(data.message); carregarOS(); })
+        }
+    }
+
+    // Carregar Lista
+    function carregarOS() {
+        const lista = document.getElementById('lista-os');
+        lista.innerHTML = "<p style='text-align:center'>Atualizando...</p>";
+        fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+            lista.innerHTML = "";
+            data.forEach(linha => {
+                // Índices: 0:ID, 1:Ent, 2:Sai, 3:Cli, 4:Tel, 5:Equip, 6:Volt, 7:Acess, 8:Def, 9:Diag, 10:Pecas, 11:Status, 12:Serial
+                let dataEnt = linha[1] ? new Date(linha[1]).toLocaleDateString('pt-BR') : '-';
+                let classeStatus = 'status-pendente';
+                let classeTag = 'tag-pendente';
+                if(linha[11] && linha[11].includes('Pronto')) { classeStatus = 'status-pronto'; classeTag = 'tag-pronto'; }
+                if(linha[11] && linha[11].includes('Entregue')) { classeStatus = 'status-entregue'; classeTag = 'tag-entregue'; }
+
+                // Preparar dados para o botão editar (aspas escapadas para não quebrar o HTML)
+                let safeStr = (str) => str ? String(str).replace(/"/g, '&quot;') : '';
+
+                let html = `
+                <div class="card ${classeStatus}">
+                    <div class="btn-acoes">
+                        <button class="btn-mini btn-editar" onclick='prepararEdicao("${linha[0]}", "${linha[1]}", "${safeStr(linha[3])}", "${safeStr(linha[4])}", "${safeStr(linha[5])}", "${safeStr(linha[6])}", "${safeStr(linha[7])}", "${safeStr(linha[8])}", "${safeStr(linha[9])}", "${safeStr(linha[10])}", "${safeStr(linha[11])}", "${safeStr(linha[12])}", "${linha[2]}")'>✏️ Editar</button>
+                        <button class="btn-mini btn-excluir" onclick="excluirOS('${linha[0]}')">🗑️</button>
+                    </div>
+                    
+                    <div style="margin-bottom:10px;">
+                        <strong>#${linha[0]} - ${linha[3]}</strong>
+                        <span class="status-badge ${classeTag}">${linha[11]}</span>
+                    </div>
+                    
+                    <div class="card-details">
+                        <div>📅 ${dataEnt}</div>
+                        <div>⚡ ${linha[6]}</div>
+                        <div style="grid-column: span 2">⚙️ ${linha[5]}</div>
+                        ${linha[12] ? `<div style="grid-column: span 2; color:#d35400;">🔑 Serial: ${linha[12]}</div>` : ''}
+                    </div>
+                    
+                    <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                        <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, OS ${linha[0]}..." target="_blank" style="text-decoration:none; color:#28a745; font-weight:bold;">📲 WhatsApp</a>
+                    </div>
+                </div>`;
+                lista.innerHTML += html;
+            });
+        });
+    }
+
+    window.filtrarLista = function() {
         let termo = document.getElementById('campo_busca').value.toLowerCase();
         let cards = document.getElementsByClassName('card');
+        for (let card of cards) card.style.display = card.innerText.toLowerCase().includes(termo) ? "" : "none";
+    }
 
-        for (let i = 0; i < cards.length; i++) {
-            let textoCard = cards[i].innerText.
+    carregarOS();
+</script>
+
+</body>
+</html>
