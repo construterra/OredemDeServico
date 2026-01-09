@@ -3,34 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema OS 3.0</title>
+    <title>Sistema OS Profissional</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #e9ecef; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px;}
+        
+        /* SELETOR DE MODO */
+        .mode-selector { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 20px; }
+        .mode-btn { flex: 1; padding: 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; text-align: center; font-weight: bold; color: #555; background: #f8f9fa; transition: all 0.2s; }
+        .mode-btn.active { border-color: #007bff; color: #007bff; background: #e7f1ff; }
+        .mode-btn:hover { background: #eee; }
+
+        /* Formulário */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
         label { font-weight: bold; font-size: 0.9em; color: #555; display: block; margin-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; }
         
-        #btn-salvar { background: #007bff; color: white; }
+        /* Botão Salvar Principal */
+        #btn-salvar { width: 100%; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 15px; font-weight: bold; background: #007bff; color: white; transition: background 0.3s;}
         #btn-salvar:hover { background: #0056b3; }
+        #btn-cancelar-edicao { width: 100%; padding: 10px; background: #6c757d; color: white; border:none; border-radius:5px; margin-top: 10px; display: none; cursor: pointer;}
+
+        /* Cards do Histórico */
+        .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        #btn-cancelar-edicao { background: #6c757d; color: white; display: none; margin-top: 10px; }
-
-        /* Barra de pesquisa */
-        .search-container { margin-bottom: 20px; }
-        .search-input { width: 100%; padding: 15px; border: 2px solid #007bff; border-radius: 30px; font-size: 16px; outline: none; }
-
-        /* Cards */
-        .card { background: #fff; border-left: 5px solid #ddd; margin-top: 15px; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
-        .btn-acoes { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
-        .btn-mini { padding: 5px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; color: white; border: none; }
+        /* CORREÇÃO DO LAYOUT MOBILE: Botões embaixo */
+        .card-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; justify-content: flex-end; }
+        .btn-mini { padding: 8px 15px; font-size: 14px; border-radius: 4px; cursor: pointer; color: white; border: none; }
         .btn-editar { background: #f39c12; }
         .btn-excluir { background: #ff4757; }
         
-        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; margin-top: 25px;} /* Margin top maior para não bater nos botões */
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #444; }
+        
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
 
         /* Cores Status */
@@ -42,117 +49,207 @@
         /* Checkbox */
         .check-box-container { background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; display: flex; align-items: center; cursor: pointer; }
         .check-box-container input { width: auto; margin-right: 10px; transform: scale(1.5); }
+        
+        /* Esconder/Mostrar seções */
+        .secao-oculta { display: none; }
+        
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2 id="titulo-form">Nova Ordem de Serviço</h2>
+    
+    <div class="mode-selector">
+        <div class="mode-btn active" onclick="setMode('entrada')" id="btn-mode-entrada">📥 Entrada</div>
+        <div class="mode-btn" onclick="setMode('manutencao')" id="btn-mode-manutencao">🔧 Manutenção</div>
+        <div class="mode-btn" onclick="setMode('entrega')" id="btn-mode-entrega">📦 Entrega</div>
+    </div>
+
     <form id="form-os">
         <input type="hidden" name="acao" id="acao" value="salvar">
         <input type="hidden" name="id_editar" id="id_editar">
-
+        <input type="hidden" name="Data_Entrada" id="hidden_data_entrada">
+        
         <div class="form-grid">
-            <div>
-                <label>Nº da OS</label>
-                <input type="text" id="display_id" value="Automático" disabled style="background:#f0f0f0; color:#888;">
-            </div>
-            <div>
-                <label>Data de Entrada</label>
-                <input type="date" name="Data_Entrada" id="data_entrada" required>
-            </div>
             <div class="full-width">
-                <label>Nome do Cliente</label>
-                <input type="text" name="Cliente" id="cliente" placeholder="Nome completo" required>
+                <label>Nº OS: <input type="text" id="display_id" value="Automático" disabled style="display:inline; width:100px; background:#f0f0f0; border:none;"></label>
             </div>
-            <div>
-                <label>WhatsApp (DDD+Número)</label>
-                <input type="tel" name="Telefone" id="telefone" placeholder="Ex: 11999998888" required>
+
+            <div id="grupo-entrada" class="full-width form-grid" style="grid-column: span 2; margin:0; padding:0;">
+                <div class="full-width">
+                    <label>Nome do Cliente *</label>
+                    <input type="text" name="Cliente" id="cliente" placeholder="Nome completo">
+                </div>
+                <div>
+                    <label>Telefone/WhatsApp *</label>
+                    <input type="tel" name="Telefone" id="telefone" placeholder="DDD + Número">
+                </div>
+                 <div>
+                    <label>Vendedor (Recebimento) *</label>
+                    <input type="text" name="Vendedor" id="vendedor" placeholder="Quem recebeu?">
+                </div>
+                <div>
+                    <label>Equipamento *</label>
+                    <input type="text" name="Equipamento" id="equipamento" placeholder="Ex: Bomba Sapinho">
+                </div>
+                <div>
+                    <label>Voltagem *</label>
+                    <select name="Voltagem" id="voltagem">
+                        <option value="N/D">N/D (Não Identificado)</option>
+                        <option value="110v">110v</option>
+                        <option value="127v">127v</option>
+                        <option value="220v">220v</option>
+                        <option value="254v">254v</option>
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Acessórios</label>
+                    <input type="text" name="Acessorios" id="acessorios" placeholder="O que veio junto?">
+                </div>
+                <div class="full-width">
+                    <label>Defeito Relatado *</label>
+                    <input type="text" name="Defeito" id="defeito" placeholder="Reclamação do cliente">
+                </div>
             </div>
-            <div>
-                <label>Status Atual</label>
+
+            <div id="grupo-manutencao" class="secao-oculta full-width form-grid" style="grid-column: span 2; background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #ddd;">
+                <div class="full-width">
+                    <h3 style="margin-top:0; color:#007bff;">Área do Técnico</h3>
+                </div>
+                <div class="full-width">
+                    <label>Técnico Responsável *</label>
+                    <input type="text" name="Tecnico" id="tecnico" placeholder="Nome do Técnico">
+                </div>
+                <div class="full-width">
+                    <label>Diagnóstico Técnico</label>
+                    <textarea name="Diagnostico" id="diagnostico" placeholder="O que foi constatado?"></textarea>
+                </div>
+                
+                <div class="full-width">
+                    <label class="check-box-container">
+                        <input type="checkbox" id="check_troca_caneca">
+                        <span>⚠️ Houve troca de Caneca?</span>
+                    </label>
+                </div>
+                <div class="full-width" id="box-serial" style="display:none; background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba;">
+                    <label style="color:#d35400;">🔢 Serial Caneca (Obrigatório)</label>
+                    <input type="text" name="Serial_Caneca" id="serial_caneca">
+                </div>
+                
+                <div class="full-width">
+                    <label>Peças Trocadas / Serviço</label>
+                    <textarea name="Pecas_Trocadas" id="pecas_trocadas" placeholder="O que foi feito?"></textarea>
+                </div>
+            </div>
+            
+            <div class="full-width">
+                <label>Status da OS</label>
                 <select name="Status" id="status_campo">
-                    <option value="Aguardando Avaliação">Aguardando Avaliação</option>
-                    <option value="Em Manutenção">Em Manutenção</option>
-                    <option value="Aguardando Peça">Aguardando Peça</option>
-                    <option value="Pronto">Pronto</option>
-                    <option value="Entregue">Entregue</option>
-                </select>
+                    </select>
             </div>
-            <div>
-                <label>Equipamento</label>
-                <input type="text" name="Equipamento" id="equipamento" placeholder="Ex: Bomba Centrífuga" required>
+
+            <div id="grupo-entrega" class="secao-oculta full-width">
+                 <label>Data de Saída / Entrega</label>
+                 <input type="date" name="Data_Saida" id="data_saida">
             </div>
-            <div>
-                <label>Voltagem</label>
-                <select name="Voltagem" id="voltagem">
-                    <option value="110v">110v</option>
-                    <option value="127v">127v</option>
-                    <option value="220v Mono">220v Monofásica</option>
-                    <option value="220v Trif">220v Trifásica</option>
-                    <option value="254v">254v</option>
-                    <option value="380v">380v Trifásica</option>
-                    <option value="Outro">Outro</option>
-                </select>
-            </div>
-            <div class="full-width">
-                <label>Acessórios</label>
-                <input type="text" name="Acessorios" id="acessorios" placeholder="Ex: Válvula de pé...">
-            </div>
-            <div class="full-width">
-                <label>Defeito Relatado</label>
-                <input type="text" name="Defeito" id="defeito" placeholder="O que o cliente disse?">
-            </div>
-            <div class="full-width">
-                <label>Diagnóstico</label>
-                <textarea name="Diagnostico" id="diagnostico" placeholder="Técnico: Problemas encontrados..."></textarea>
-            </div>
-            
-            <div class="full-width">
-                <label class="check-box-container">
-                    <input type="checkbox" id="check_troca_caneca">
-                    <span>⚠️ Houve troca de Caneca?</span>
-                </label>
-            </div>
-            <div class="full-width" id="box-serial" style="display:none; background:#fff3cd; padding:10px; border-radius:5px; border:1px solid #ffeeba; margin-top:-10px;">
-                <label style="color:#d35400;">🔢 Serial Caneca (Obrigatório)</label>
-                <input type="text" name="Serial_Caneca" id="serial_caneca">
-            </div>
-            
-            <div class="full-width">
-                <label>Peças Trocadas</label>
-                <textarea name="Pecas_Trocadas" id="pecas_trocadas" placeholder="Liste as peças trocadas..."></textarea>
-            </div>
-            <div>
-                <label>Data de Saída</label>
-                <input type="date" name="Data_Saida" id="data_saida">
-            </div>
+
         </div>
 
-        <button type="submit" id="btn-salvar">💾 Salvar OS</button>
-        <button type="button" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar Edição</button>
+        <button type="submit" id="btn-salvar">💾 Salvar Entrada</button>
+        <button type="button" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar Edição / Novo</button>
     </form>
 </div>
 
 <div class="container" style="margin-top: 20px;">
-    <h2>Histórico / Consultar</h2>
-    <div class="search-container">
-        <input type="text" id="campo_busca" class="search-input" placeholder="🔍 Buscar por Nome, ID..." onkeyup="filtrarLista()">
-    </div>
+    <h2>Consultar OS</h2>
+    <input type="text" id="campo_busca" style="width:100%; padding:15px; border:2px solid #007bff; border-radius:30px; margin-bottom:15px;" placeholder="🔍 Buscar Nome, ID, Status..." onkeyup="filtrarLista()">
     <div id="lista-os">Carregando...</div>
 </div>
 
 <script>
-    // 🔴 🔴 COLE SEU LINK AQUI EMBAIXO 🔴 🔴
+    // 🔴 COLE SEU LINK NOVO AQUI 🔴
     const scriptURL = 'https://script.google.com/macros/s/AKfycbxyoZcOqdg6j6U5NKdKPwUZ7yAvUcLrEuUzoWGU-rwHSKQo4EZdtwy70Vor7CCYjVAgzg/exec'; 
-    // ----------------------------------------
+    // ----------------------------
 
-    document.getElementById('data_entrada').valueAsDate = new Date();
+    // Configuração inicial
+    document.getElementById('hidden_data_entrada').value = new Date().toISOString().split('T')[0];
+    let currentMode = 'entrada';
+
+    // ELEMENTOS
     const form = document.forms['form-os'];
     const statusSelect = document.getElementById('status_campo');
     const checkCaneca = document.getElementById('check_troca_caneca');
     const serialBox = document.getElementById('box-serial');
     const serialInput = document.getElementById('serial_caneca');
+    
+    // FUNÇÃO PARA TROCAR OS MODOS
+    function setMode(mode) {
+        currentMode = mode;
+        
+        // Atualiza botões visuais
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-mode-' + mode).classList.add('active');
+
+        // Referências aos grupos
+        const gEntrada = document.getElementById('grupo-entrada');
+        const gManutencao = document.getElementById('grupo-manutencao');
+        const gEntrega = document.getElementById('grupo-entrega');
+        const btnSalvar = document.getElementById('btn-salvar');
+
+        // Lógica de Exibição
+        if (mode === 'entrada') {
+            gEntrada.classList.remove('secao-oculta');
+            gManutencao.classList.add('secao-oculta');
+            gEntrega.classList.add('secao-oculta');
+            btnSalvar.innerText = "💾 Salvar Entrada";
+            
+            // Campos obrigatórios Entrada
+            document.getElementById('cliente').required = true;
+            document.getElementById('vendedor').required = true;
+            document.getElementById('tecnico').required = false;
+
+            // Status fixo
+            statusSelect.innerHTML = '<option value="Aguardando Avaliação">Aguardando Avaliação</option>';
+        } 
+        else if (mode === 'manutencao') {
+            gEntrada.classList.add('secao-oculta'); // Esconde dados básicos pra focar na técnica (ou pode deixar visivel se preferir)
+            gManutencao.classList.remove('secao-oculta');
+            gEntrega.classList.add('secao-oculta');
+            btnSalvar.innerText = "🔧 Salvar Manutenção";
+
+            // Campos obrigatórios Manutenção
+            document.getElementById('cliente').required = false; // Já foi preenchido
+            document.getElementById('vendedor').required = false;
+            document.getElementById('tecnico').required = true;
+
+            // Status Opções
+            statusSelect.innerHTML = `
+                <option value="Em Manutenção">Em Manutenção</option>
+                <option value="Aguardando Peça">Aguardando Peça</option>
+                <option value="Pronto">Pronto</option>
+            `;
+        }
+        else if (mode === 'entrega') {
+            gEntrada.classList.add('secao-oculta');
+            gManutencao.classList.add('secao-oculta');
+            gEntrega.classList.remove('secao-oculta');
+            btnSalvar.innerText = "📦 Finalizar Entrega";
+            
+            document.getElementById('tecnico').required = false;
+            document.getElementById('data_saida').valueAsDate = new Date(); // Data hoje
+
+            // Status Opções
+            statusSelect.innerHTML = `
+                <option value="Entregue Consertada">Entregue Consertada</option>
+                <option value="Não Arrumou">Não Arrumou (Devolvida)</option>
+            `;
+        }
+    }
+
+    // Inicializa no modo entrada
+    setMode('entrada');
 
     // Validação Caneca
     function verificarCaneca() {
@@ -174,43 +271,69 @@
     checkCaneca.addEventListener('change', verificarCaneca);
     statusSelect.addEventListener('change', verificarCaneca);
 
-    // FUNÇÃO EDITAR (Preenche o formulário)
-    window.prepararEdicao = function(id, dataEnt, cliente, tel, equip, volt, acess, def, diag, pecas, status, serial, dataSai) {
-        document.getElementById('titulo-form').innerText = "Editando OS #" + id;
-        document.getElementById('btn-salvar').innerText = "🔄 Atualizar OS";
-        document.getElementById('btn-salvar').style.background = "#f39c12";
+    // FUNÇÃO PREPARAR EDIÇÃO
+    window.prepararEdicao = function(linhaStr) {
+        // Converte string JSON de volta para objeto
+        const linha = JSON.parse(decodeURIComponent(linhaStr));
+        // Mapeamento: 0:ID, 1:Ent, 2:Sai, 3:Cli, 4:Tel, 5:Equip, 6:Volt, 7:Acess, 8:Def, 9:Vend, 10:Tec, 11:Diag, 12:Pecas, 13:Status, 14:Serial
+
+        document.getElementById('titulo-form').innerText = "Editando OS #" + linha[0];
         document.getElementById('btn-cancelar-edicao').style.display = "block";
         
-        // Preenche campos ocultos e visíveis
+        // Preenche campos ocultos
         document.getElementById('acao').value = "editar";
-        document.getElementById('id_editar').value = id;
-        document.getElementById('display_id').value = id;
+        document.getElementById('id_editar').value = linha[0];
+        document.getElementById('display_id').value = linha[0];
         
-        // Tratamento de datas (o formato yyyy-mm-dd é chato)
-        if(dataEnt && dataEnt !== 'undefined') { 
-            try { document.getElementById('data_entrada').value = new Date(dataEnt).toISOString().split('T')[0]; } catch(e){} 
-        }
-        if(dataSai && dataSai !== 'undefined' && dataSai !== '') { 
-            try { document.getElementById('data_saida').value = new Date(dataSai).toISOString().split('T')[0]; } catch(e){} 
-        }
+        // Preenche TODOS os campos (independente de estarem visíveis)
+        // Datas
+        if(linha[1]) try { document.getElementById('hidden_data_entrada').value = new Date(linha[1]).toISOString().split('T')[0]; } catch(e){}
+        if(linha[2]) try { document.getElementById('data_saida').value = new Date(linha[2]).toISOString().split('T')[0]; } catch(e){}
 
-        document.getElementById('cliente').value = cliente;
-        document.getElementById('telefone').value = tel;
-        document.getElementById('equipamento').value = equip;
-        document.getElementById('voltagem').value = volt;
-        document.getElementById('acessorios').value = (acess === 'undefined') ? '' : acess;
-        document.getElementById('defeito').value = (def === 'undefined') ? '' : def;
-        document.getElementById('diagnostico').value = (diag === 'undefined') ? '' : diag;
-        document.getElementById('pecas_trocadas').value = (pecas === 'undefined') ? '' : pecas;
-        document.getElementById('status_campo').value = status;
+        document.getElementById('cliente').value = linha[3];
+        document.getElementById('telefone').value = linha[4];
+        document.getElementById('equipamento').value = linha[5];
+        document.getElementById('voltagem').value = linha[6];
+        document.getElementById('acessorios').value = linha[7];
+        document.getElementById('defeito').value = linha[8];
+        document.getElementById('vendedor').value = linha[9];
+        document.getElementById('tecnico').value = linha[10];
+        document.getElementById('diagnostico').value = linha[11];
+        document.getElementById('pecas_trocadas').value = linha[12];
         
-        if (serial && serial !== 'undefined' && serial !== "") {
+        // Serial
+        if (linha[14] && linha[14] !== "") {
             checkCaneca.checked = true;
-            serialInput.value = serial;
+            serialInput.value = linha[14];
         } else {
             checkCaneca.checked = false;
         }
-        verificarCaneca();
+
+        // Define o modo baseado no status atual para facilitar
+        if(linha[13] && linha[13].includes('Aguardando Avaliação')) {
+            setMode('manutencao'); // Se estava aguardando, o próximo passo é manutenção
+        } else if (linha[13] && linha[13].includes('Pronto')) {
+            setMode('entrega'); // Se já está pronto, próximo passo é entrega
+        } else {
+            setMode('manutencao'); // Padrão edição
+        }
+        
+        // Força o valor do status após mudar o modo (pois o modo reseta o select)
+        // Pequeno delay para garantir que o select foi recriado
+        setTimeout(() => {
+             // Se o status atual não existir nas opções do modo, adiciona temporariamente
+             let exists = Array.from(statusSelect.options).some(o => o.value === linha[13]);
+             if(!exists) {
+                 let opt = document.createElement('option');
+                 opt.value = linha[13];
+                 opt.innerText = linha[13];
+                 opt.selected = true;
+                 statusSelect.add(opt);
+             } else {
+                 statusSelect.value = linha[13];
+             }
+             verificarCaneca();
+        }, 100);
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -218,26 +341,25 @@
     window.cancelarEdicao = function() {
         form.reset();
         document.getElementById('titulo-form').innerText = "Nova Ordem de Serviço";
-        document.getElementById('btn-salvar').innerText = "💾 Salvar OS";
-        document.getElementById('btn-salvar').style.background = "#007bff";
         document.getElementById('btn-cancelar-edicao').style.display = "none";
         document.getElementById('acao').value = "salvar";
         document.getElementById('id_editar').value = "";
         document.getElementById('display_id').value = "Automático";
-        document.getElementById('data_entrada').valueAsDate = new Date();
-        verificarCaneca();
+        document.getElementById('hidden_data_entrada').value = new Date().toISOString().split('T')[0];
+        setMode('entrada');
     }
 
-    // Salvar ou Editar
+    // ENVIO DO FORMULÁRIO
     form.addEventListener('submit', e => {
         e.preventDefault();
         
+        // Validação extra do Serial
         if(checkCaneca.checked && statusSelect.value === 'Pronto' && serialInput.value.trim() === "") {
-            alert("ERRO: Serial da caneca é obrigatório!"); return;
+            alert("ERRO: Serial obrigatório para status Pronto!"); return;
         }
 
         const btn = document.getElementById('btn-salvar');
-        const textoOriginal = btn.innerText;
+        const txtOriginal = btn.innerText;
         btn.innerText = "Processando...";
         btn.disabled = true;
 
@@ -245,25 +367,25 @@
             .then(response => response.json())
             .then(data => {
                 if(data.result === 'success') {
-                    alert("✅ Sucesso: " + (data.message || "OS Salva!"));
-                    cancelarEdicao(); // Limpa e volta ao estado normal
+                    alert("✅ " + (data.message || "Salvo com sucesso!"));
+                    cancelarEdicao(); // Limpa tudo
                     carregarOS();
                 } else {
                     alert("Erro: " + data.message);
                 }
-                btn.innerText = textoOriginal;
+                btn.innerText = txtOriginal;
                 btn.disabled = false;
             })
             .catch(error => { 
                 console.error('Erro!', error); 
-                alert("Erro de conexão. Verifique se copiou o Link do Script certo!"); 
+                alert("Erro de conexão."); 
                 btn.disabled = false; 
             })
     });
 
     // Excluir
     window.excluirOS = function(id) {
-        let senha = prompt("Senha para excluir OS #" + id + ":");
+        let senha = prompt("Senha Mestra para excluir #" + id + ":");
         if (senha) {
             let formData = new FormData();
             formData.append('acao', 'excluir');
@@ -284,37 +406,35 @@
         .then(data => {
             lista.innerHTML = "";
             data.forEach(linha => {
-                // Índices: 0:ID, 1:Ent, 2:Sai, 3:Cli, 4:Tel, 5:Equip, 6:Volt, 7:Acess, 8:Def, 9:Diag, 10:Pecas, 11:Status, 12:Serial
-                let dataEnt = linha[1] ? new Date(linha[1]).toLocaleDateString('pt-BR') : '-';
+                // Encode para passar no botão editar sem quebrar aspas
+                let linhaStr = encodeURIComponent(JSON.stringify(linha));
+
+                // Status Class
+                let st = linha[13] || '';
                 let classeStatus = 'status-pendente';
                 let classeTag = 'tag-pendente';
-                if(linha[11] && linha[11].includes('Pronto')) { classeStatus = 'status-pronto'; classeTag = 'tag-pronto'; }
-                if(linha[11] && linha[11].includes('Entregue')) { classeStatus = 'status-entregue'; classeTag = 'tag-entregue'; }
-
-                // Preparar dados para o botão editar (aspas escapadas para não quebrar o HTML)
-                let safeStr = (str) => str ? String(str).replace(/"/g, '&quot;') : '';
+                if(st.includes('Pronto')) { classeStatus = 'status-pronto'; classeTag = 'tag-pronto'; }
+                if(st.includes('Entregue')) { classeStatus = 'status-entregue'; classeTag = 'tag-entregue'; }
+                if(st.includes('Manutenção')) { classeStatus = 'status-manutencao'; classeTag = 'tag-manutencao'; }
 
                 let html = `
                 <div class="card ${classeStatus}">
-                    <div class="btn-acoes">
-                        <button class="btn-mini btn-editar" onclick='prepararEdicao("${linha[0]}", "${linha[1]}", "${safeStr(linha[3])}", "${safeStr(linha[4])}", "${safeStr(linha[5])}", "${safeStr(linha[6])}", "${safeStr(linha[7])}", "${safeStr(linha[8])}", "${safeStr(linha[9])}", "${safeStr(linha[10])}", "${safeStr(linha[11])}", "${safeStr(linha[12])}", "${linha[2]}")'>✏️ Editar</button>
-                        <button class="btn-mini btn-excluir" onclick="excluirOS('${linha[0]}')">🗑️</button>
-                    </div>
-                    
-                    <div style="margin-bottom:10px;">
+                    <div class="card-header">
                         <strong>#${linha[0]} - ${linha[3]}</strong>
-                        <span class="status-badge ${classeTag}">${linha[11]}</span>
+                        <span class="status-badge ${classeTag}">${st}</span>
                     </div>
                     
                     <div class="card-details">
-                        <div>📅 ${dataEnt}</div>
+                        <div>📅 ${linha[1] ? new Date(linha[1]).toLocaleDateString('pt-BR') : '-'}</div>
                         <div>⚡ ${linha[6]}</div>
                         <div style="grid-column: span 2">⚙️ ${linha[5]}</div>
-                        ${linha[12] ? `<div style="grid-column: span 2; color:#d35400;">🔑 Serial: ${linha[12]}</div>` : ''}
+                        ${linha[10] ? `<div style="grid-column: span 2">🔧 Téc: ${linha[10]}</div>` : ''}
                     </div>
-                    
-                    <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-                        <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, OS ${linha[0]}..." target="_blank" style="text-decoration:none; color:#28a745; font-weight:bold;">📲 WhatsApp</a>
+
+                    <div class="card-actions">
+                         <a href="https://wa.me/55${linha[4]}?text=Olá ${linha[3]}, OS ${linha[0]}..." target="_blank" style="text-decoration:none; color:#28a745; font-weight:bold; margin-right:auto; align-self:center;">📲 WhatsApp</a>
+                        <button class="btn-mini btn-editar" onclick="prepararEdicao('${linhaStr}')">✏️ Editar</button>
+                        <button class="btn-mini btn-excluir" onclick="excluirOS('${linha[0]}')">🗑️</button>
                     </div>
                 </div>`;
                 lista.innerHTML += html;
